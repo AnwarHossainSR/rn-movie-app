@@ -63,12 +63,10 @@ const Details = () => {
     try {
       setIsSaving(true);
       setError(null);
-      console.log("Toggling save for movie:", id, "isSaved:", isSaved);
       if (isSaved) {
         await removeSavedMovie(id as string);
         setIsSaved(false);
       } else if (movie) {
-        // console.log("Saving movie:", movie);
         await saveMovie(movie);
         setIsSaved(true);
       }
