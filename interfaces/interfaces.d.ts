@@ -2,13 +2,13 @@ interface Movie {
   id: number;
   title: string;
   adult: boolean;
-  backdrop_path: string;
+  backdrop_path: string | null;
   genre_ids: number[];
   original_language: string;
   original_title: string;
-  overview: string;
+  overview: string | null;
   popularity: number;
-  poster_path: string;
+  poster_path: string | null;
   release_date: string;
   video: boolean;
   vote_average: number;
@@ -26,6 +26,7 @@ interface TrendingMovie {
 interface MovieDetails {
   adult: boolean;
   backdrop_path: string | null;
+  genre_ids: number[];
   belongs_to_collection: {
     id: number;
     name: string;
@@ -74,4 +75,16 @@ interface MovieDetails {
 interface TrendingCardProps {
   movie: TrendingMovie;
   index: number;
+}
+
+interface SavedMovie {
+  $id: string;
+  user_id: string;
+  movie_id: number;
+  title: string;
+  poster_url: string;
+  vote_average: number;
+  release_date: string;
+  genre_ids: number[];
+  saved_at: string;
 }
