@@ -2,6 +2,7 @@ import { Link } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 import { icons } from "@/constants/icons";
+import React from "react";
 
 const MovieCard = ({
   id,
@@ -47,4 +48,4 @@ const MovieCard = ({
   );
 };
 
-export default MovieCard;
+export default React.memo(MovieCard);

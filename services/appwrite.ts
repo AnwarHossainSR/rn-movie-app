@@ -10,6 +10,12 @@ const SAVED_MOVIES_COLLECTION_ID =
 const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT as string)
   .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!);
+// Set correct platform for Web vs Mobile
+if (typeof window !== "undefined") {
+  client.setPlatform("web");
+} else {
+  client.setPlatform("react-native");
+}
 
 // Initialize Appwrite services
 export const account = new Account(client);

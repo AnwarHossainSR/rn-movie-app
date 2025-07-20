@@ -12,7 +12,6 @@ export default function RootLayout() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if the current route is public
         const currentRoute = segments[segments.length - 1];
         const isPublicRoute =
           currentRoute === "login" || currentRoute === "signup";
@@ -22,18 +21,42 @@ export default function RootLayout() {
           return;
         }
 
-        // Attempt to get the current session
-        const session = await account.get();
-        if (session) {
-          // Session exists, no redirect needed
+        console.log("Checking session...");
+        const session = await account.getSession("current");
+        console.log("Session found:", session?.$id);
+
+        const user = await account.get();
+        console.log("User found:", user?.$id);
+
+        if (user) {
           setIsCheckingAuth(false);
         } else {
-          // No session, redirect to login
+          console.log("No user found, redirecting to login");
           router.replace("/(auth)/login");
         }
       } catch (error: any) {
         console.error("Authentication check failed:", error);
-        router.replace("/(auth)/login");
+
+        // Handle invalid session or missing scope
+        if (
+          error.code === 401 ||
+          error.message?.includes("missing scope (account)")
+        ) {
+          console.log(
+            "Invalid session or missing account scope. Redirecting..."
+          );
+
+          // Clear cookieFallback if it exists
+          if (typeof window !== "undefined" && window.localStorage) {
+            localStorage.removeItem(
+              `cookieFallback_${process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID}`
+            );
+          }
+
+          router.replace("/(auth)/login");
+        } else {
+          console.error("Unexpected error:", error);
+        }
       } finally {
         setIsCheckingAuth(false);
       }
@@ -42,7 +65,6 @@ export default function RootLayout() {
     checkAuth();
   }, [segments, router]);
 
-  // Show a loading UI while checking authentication
   if (isCheckingAuth) {
     return (
       <View className="flex-1 bg-primary justify-center items-center">
