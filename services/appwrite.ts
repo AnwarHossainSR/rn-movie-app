@@ -11,7 +11,8 @@ const client = new Client()
   .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!);
 
 const database = new Databases(client);
-const account = new Account(client);
+export const account = new Account(client);
+export { ID };
 
 export const updateSearchCount = async (query: string, movie: Movie) => {
   try {
