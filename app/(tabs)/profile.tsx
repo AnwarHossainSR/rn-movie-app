@@ -1,8 +1,10 @@
 import { account } from "@/services/appwrite";
 import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 interface UserProfile {
   $id: string;
@@ -53,31 +55,88 @@ const Profile = () => {
   };
 
   return (
-    <View className="flex-1 bg-primary justify-center px-5">
-      <Text className="text-white font-bold text-2xl mb-5">Profile</Text>
+    <LinearGradient colors={["#1A2525", "#2E3D3D"]} className="flex-1">
+      <View className="flex-1 justify-center px-5">
+        {/* Header */}
+        <Animated.View
+          entering={FadeInUp.duration(500)}
+          className="items-center mb-8"
+        >
+          <Text className="text-white font-bold text-3xl">My Profile</Text>
+          <Text className="text-light-200 text-base mt-2">
+            Manage your account details
+          </Text>
+        </Animated.View>
 
-      {loading && <Text className="text-white text-center">Loading...</Text>}
+        {/* Profile Card */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          className="bg-dark-100 rounded-2xl p-6 mb-6 shadow-lg"
+        >
+          {loading && (
+            <Text className="text-white text-center text-lg">Loading...</Text>
+          )}
 
-      {error && (
-        <Text className="text-red-500 text-center mb-4">Error: {error}</Text>
-      )}
+          {error && (
+            <Text className="text-red-500 text-center text-lg mb-4">
+              Error: {error}
+            </Text>
+          )}
 
-      {user && !loading && !error && (
-        <View className="mb-4">
-          <Text className="text-light-200 mb-2">Name: {user.name}</Text>
-          <Text className="text-light-200 mb-2">Email: {user.email}</Text>
-        </View>
-      )}
+          {user && !loading && !error && (
+            <View className="items-center">
+              {/* Avatar */}
+              <View className="w-24 h-24 rounded-full bg-accent justify-center items-center mb-4">
+                <Text className="text-white text-4xl font-bold">
+                  {user.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
 
-      <TouchableOpacity
-        className="bg-accent rounded-lg py-3 flex-row items-center justify-center"
-        onPress={handleLogout}
-        disabled={loading}
-      >
-        <MaterialIcons name="logout" size={20} color="#fff" />
-        <Text className="text-white font-semibold text-base ml-2">Log Out</Text>
-      </TouchableOpacity>
-    </View>
+              {/* User Info */}
+              <Text className="text-white font-semibold text-xl mb-2">
+                {user.name}
+              </Text>
+              <Text className="text-light-200 text-base mb-4">
+                {user.email}
+              </Text>
+            </View>
+          )}
+        </Animated.View>
+
+        {/* Logout Button */}
+        <Animated.View entering={FadeInDown.duration(500).delay(400)}>
+          <TouchableOpacity
+            className="bg-accent rounded-lg py-4 flex-row items-center justify-center"
+            onPress={handleLogout}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    scale: loading ? 0.95 : 1,
+                  },
+                ],
+              }}
+            >
+              {loading ? (
+                <Text className="text-white font-semibold text-lg">
+                  Logging out...
+                </Text>
+              ) : (
+                <View className="flex-row items-center">
+                  <MaterialIcons name="logout" size={24} color="#fff" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Log Out
+                  </Text>
+                </View>
+              )}
+            </Animated.View>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </LinearGradient>
   );
 };
 

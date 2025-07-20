@@ -80,11 +80,11 @@ interface TrendingCardProps {
 interface SavedMovie {
   $id: string;
   user_id: string;
-  movie_id: string;
+  movie_id: number;
   title: string;
   poster_url: string;
   vote_average: number;
   release_date: string;
-  genre_ids: number[];
+  genre_ids?: number[];
   saved_at: string;
 }
