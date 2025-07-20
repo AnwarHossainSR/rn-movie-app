@@ -1,4 +1,6 @@
+// movie/[id].tsx
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -11,6 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { icons } from "@/constants/icons";
 import { fetchMovieDetails } from "@/services/api";
+import {
+  getSavedMovies,
+  removeSavedMovie,
+  saveMovie,
+} from "@/services/appwrite";
 import useFetch from "@/services/usefetch";
 
 interface MovieInfoProps {
@@ -30,10 +37,42 @@ const MovieInfo = ({ label, value }: MovieInfoProps) => (
 const Details = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const [isSaved, setIsSaved] = useState(false);
 
   const { data: movie, loading } = useFetch(() =>
     fetchMovieDetails(id as string)
   );
+
+  // Check if the movie is saved
+  useEffect(() => {
+    const checkIfSaved = async () => {
+      try {
+        const savedMovies = await getSavedMovies();
+        const isMovieSaved = savedMovies.some(
+          (savedMovie) => savedMovie.movie_id === id
+        );
+        setIsSaved(isMovieSaved);
+      } catch (error) {
+        console.error("Error checking saved movie:", error);
+      }
+    };
+    checkIfSaved();
+  }, [id]);
+
+  // Handle save/unsave movie
+  const handleSaveToggle = async () => {
+    try {
+      if (isSaved) {
+        await removeSavedMovie(id as string);
+        setIsSaved(false);
+      } else if (movie) {
+        await saveMovie(movie);
+        setIsSaved(true);
+      }
+    } catch (error) {
+      console.error("Error toggling save:", error);
+    }
+  };
 
   if (loading)
     return (
@@ -54,11 +93,15 @@ const Details = () => {
             resizeMode="stretch"
           />
 
-          <TouchableOpacity className="absolute bottom-5 right-5 rounded-full size-14 bg-white flex items-center justify-center">
+          <TouchableOpacity
+            className="absolute bottom-5 right-5 rounded-full size-14 bg-white flex items-center justify-center"
+            onPress={handleSaveToggle}
+          >
             <Image
-              source={icons.play}
-              className="w-6 h-7 ml-1"
-              resizeMode="stretch"
+              source={isSaved ? icons.bookmarkFilled : icons.save}
+              className="w-6 h-6"
+              tintColor={isSaved ? "#FFD700" : "#000"}
+              resizeMode="contain"
             />
           </TouchableOpacity>
         </View>
@@ -74,11 +117,9 @@ const Details = () => {
 
           <View className="flex-row items-center bg-dark-100 px-2 py-1 rounded-md gap-x-1 mt-2">
             <Image source={icons.star} className="size-4" />
-
             <Text className="text-white font-bold text-sm">
               {Math.round(movie?.vote_average ?? 0)}/10
             </Text>
-
             <Text className="text-light-200 text-sm">
               ({movie?.vote_count} votes)
             </Text>
