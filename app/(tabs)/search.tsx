@@ -1,121 +1,99 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Text, View } from "react-native";
-
-import { icons } from "@/constants/icons";
-import { images } from "@/constants/images";
-
-import { fetchMovies } from "@/services/api";
-import { updateSearchCount } from "@/services/appwrite";
-import useFetch from "@/services/usefetch";
-
-import MovieDisplayCard from "@/components/MovieCard";
+import MovieCard from "@/components/MovieCard";
 import SearchBar from "@/components/SearchBar";
+import { fetchMovies } from "@/services/api";
+import useFetch from "@/services/usefetch";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { useState } from "react";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 const Search = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-
+  const [query, setQuery] = useState("");
   const {
-    data: movies = [],
+    data: movies,
     loading,
     error,
-    refetch: loadMovies,
-    reset,
-  } = useFetch(() => fetchMovies({ query: searchQuery }), false);
+    refetch,
+  } = useFetch(() => fetchMovies({ query }), false);
 
-  const handleSearch = (text: string) => {
-    setSearchQuery(text);
+  const handleSearch = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (query && token) {
+        await axios.post(
+          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/search`,
+          { query },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+      }
+      refetch();
+    } catch (err) {
+      console.error("Failed to save search:", err);
+    }
   };
 
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(async () => {
-      if (searchQuery.trim()) {
-        await loadMovies();
-
-        // Call updateSearchCount only if there are results
-        if (movies?.length! > 0 && movies?.[0]) {
-          await updateSearchCount(searchQuery, movies[0]);
-        }
-      } else {
-        reset();
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
-
   return (
-    <View className="flex-1 bg-primary">
-      <Image
-        source={images.bg}
-        className="flex-1 absolute w-full z-0"
-        resizeMode="cover"
-      />
+    <View className="flex-1 bg-primary px-5 pt-20">
+      <Animated.View entering={FadeInDown.duration(500)}>
+        <SearchBar
+          placeholder="Search for a movie"
+          value={query}
+          onChangeText={setQuery}
+          onPress={handleSearch}
+        />
+      </Animated.View>
 
-      <FlatList
-        className="px-5"
-        data={movies as Movie[]}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <MovieDisplayCard {...item} />}
-        numColumns={3}
-        columnWrapperStyle={{
-          justifyContent: "flex-start",
-          gap: 16,
-          marginVertical: 16,
-        }}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        ListHeaderComponent={
-          <>
-            <View className="w-full flex-row justify-center mt-20 items-center">
-              <Image source={icons.logo} className="w-12 h-10" />
-            </View>
-
-            <View className="my-5">
-              <SearchBar
-                placeholder="Search for a movie"
-                value={searchQuery}
-                onChangeText={handleSearch}
-              />
-            </View>
-
-            {loading && (
-              <ActivityIndicator
-                size="large"
-                color="#0000ff"
-                className="my-3"
-              />
+      {loading ? (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          className="mt-10 self-center"
+        >
+          <ActivityIndicator size="large" color="#0000ff" />
+        </Animated.View>
+      ) : error ? (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          className="mt-10"
+        >
+          <Text className="text-red-500 text-center">
+            Error: {error.message}
+          </Text>
+        </Animated.View>
+      ) : (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          className="flex-1 mt-5"
+        >
+          <FlatList
+            data={movies}
+            renderItem={({ item, index }) => (
+              <Animated.View
+                entering={FadeInDown.duration(500).delay(400 + index * 100)}
+                className="flex-1"
+              >
+                <MovieCard {...item} />
+              </Animated.View>
             )}
-
-            {error && (
-              <Text className="text-red-500 px-5 my-3">
-                Error: {error.message}
-              </Text>
-            )}
-
-            {!loading &&
-              !error &&
-              searchQuery.trim() &&
-              movies?.length! > 0 && (
-                <Text className="text-xl text-white font-bold">
-                  Search Results for{" "}
-                  <Text className="text-accent">{searchQuery}</Text>
-                </Text>
-              )}
-          </>
-        }
-        ListEmptyComponent={
-          !loading && !error ? (
-            <View className="mt-10 px-5">
-              <Text className="text-center text-gray-500">
-                {searchQuery.trim()
-                  ? "No movies found"
-                  : "Start typing to search for movies"}
-              </Text>
-            </View>
-          ) : null
-        }
-      />
+            keyExtractor={(item, index) =>
+              item.id.toString() + index.toString()
+            }
+            numColumns={3}
+            columnWrapperStyle={{
+              justifyContent: "space-between",
+              gap: 10,
+              marginBottom: 10,
+            }}
+            contentContainerStyle={{ paddingHorizontal: 5 }}
+            className="mt-2 pb-32"
+            scrollEnabled={true}
+            initialNumToRender={6}
+          />
+        </Animated.View>
+      )}
     </View>
   );
 };

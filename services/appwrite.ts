@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { Account, Client, Databases, ID, Query } from "react-native-appwrite";
 
 // === Configuration ===
@@ -11,10 +12,12 @@ const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT as string)
   .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!);
 // Set correct platform for Web vs Mobile
-if (typeof window !== "undefined") {
-  client.setPlatform("web");
-} else {
-  client.setPlatform("react-native");
+switch (Platform.OS) {
+  case "web":
+    client.setPlatform("http://localhost:8081");
+    break;
+  default:
+    client.setPlatform("android");
 }
 
 // Initialize Appwrite services

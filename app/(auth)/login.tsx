@@ -1,111 +1,64 @@
-import { account } from "@/services/appwrite";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useAuth } from "@/services/auth";
 import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 const Login = () => {
-  const router = useRouter();
+  const { login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const validateInputs = () => {
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setError("Please enter a valid email");
-      return false;
-    }
-    if (!password || password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return false;
-    }
-    return true;
-  };
 
   const handleLogin = async () => {
-    if (!validateInputs()) return;
-
     try {
-      setLoading(true);
-      setError(null);
-      await account.createEmailPasswordSession(email, password);
+      await login(email, password);
       Alert.alert("Success", "Logged in successfully!");
-      router.replace("/(tabs)");
-    } catch (error: any) {
-      const errorMessage =
-        error.code === 401
-          ? "Invalid email or password"
-          : error.message || "Failed to log in";
-      setError(errorMessage);
-      Alert.alert("Error", errorMessage);
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to log in");
     }
   };
 
   return (
     <View className="flex-1 bg-primary justify-center px-5">
-      <Text className="text-white font-bold text-2xl mb-5">Login</Text>
-
-      {error && <Text className="text-red-500 mb-4 text-center">{error}</Text>}
-
-      <View className="mb-4">
-        <Text className="text-light-200 mb-2">Email</Text>
-        <TextInput
-          className="bg-dark-100 text-white p-3 rounded-lg"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            setError(null);
-          }}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-
-      <View className="mb-4">
-        <Text className="text-light-200 mb-2">Password</Text>
-        <TextInput
-          className="bg-dark-100 text-white p-3 rounded-lg"
-          value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            setError(null);
-          }}
-          placeholder="Enter your password"
-          placeholderTextColor="#999"
-          secureTextEntry
-        />
-      </View>
-
-      <TouchableOpacity
-        className="bg-accent rounded-lg py-3 flex-row items-center justify-center"
-        onPress={handleLogin}
-        disabled={loading}
+      <Animated.View
+        entering={FadeInUp.duration(500)}
+        className="items-center mb-8"
       >
-        {loading ? (
-          <Text className="text-white font-semibold">Loading...</Text>
-        ) : (
-          <>
-            <MaterialIcons name="login" size={20} color="#fff" />
-            <Text className="text-white font-semibold text-base ml-2">
-              Log In
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className="mt-4"
-        onPress={() => router.push("/(auth)/signup")}
-      >
-        <Text className="text-light-200 text-center">
-          Don&apos;t have an account?{" "}
-          <Text className="text-accent">Sign Up</Text>
+        <Text className="text-white font-bold text-3xl">Login</Text>
+        <Text className="text-light-200 text-base mt-2">
+          Sign in to your account
         </Text>
-      </TouchableOpacity>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.duration(500).delay(200)}>
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          placeholderTextColor="#A8B5DB"
+          className="bg-dark-200 text-white p-4 rounded-lg mb-4"
+        />
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor="#A8B5DB"
+          secureTextEntry
+          className="bg-dark-200 text-white p-4 rounded-lg mb-4"
+        />
+        <TouchableOpacity
+          onPress={handleLogin}
+          disabled={loading}
+          className="bg-accent p-4 rounded-lg"
+          activeOpacity={0.8}
+        >
+          <Text className="text-white text-center font-bold">
+            {loading ? "Logging in..." : "Log In"}
+          </Text>
+        </TouchableOpacity>
+        {error && (
+          <Text className="text-red-500 mt-4 text-center">{error}</Text>
+        )}
+      </Animated.View>
     </View>
   );
 };

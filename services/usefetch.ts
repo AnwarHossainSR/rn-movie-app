@@ -1,40 +1,46 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 
-const useFetch = <T>(fetchFunction: () => Promise<T>, autoFetch = true) => {
+interface FetchState<T> {
+  data: T | null;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+const useFetch = <T>(
+  fetchFn: (config?: any) => Promise<T>,
+  isProtected = false
+): FetchState<T> => {
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const result = await fetchFunction();
+      let config = {};
+      if (isProtected) {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+        config = { headers: { Authorization: `Bearer ${token}` } };
+      }
+      const result = await fetchFn(config);
       setData(result);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error("An unknown error occurred")
-      );
+    } catch (err: any) {
+      setError(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const reset = () => {
-    setData(null);
-    setError(null);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    if (autoFetch) {
-      fetchData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchData();
   }, []);
 
-  return { data, loading, error, refetch: fetchData, reset };
+  return { data, loading, error, refetch: fetchData };
 };
 
 export default useFetch;

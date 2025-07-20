@@ -1,103 +1,89 @@
-import MovieDisplayCard from "@/components/MovieCard";
-import { icons } from "@/constants/icons";
-import { images } from "@/constants/images";
-import { getSavedMovies } from "@/services/appwrite";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Text, View } from "react-native";
+import MovieCard from "@/components/MovieCard";
+import useFetch from "@/services/usefetch";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 const Save = () => {
-  const [savedMovies, setSavedMovies] = useState<SavedMovie[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchSavedMovies = async () => {
-      try {
-        setLoading(true);
-        const movies = await getSavedMovies();
-        setSavedMovies(movies);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch saved movies"
-        );
-      } finally {
-        setLoading(false);
+  const fetchSavedMovies = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) throw new Error("No token found");
+    const response = await axios.get(
+      `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/saved`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       }
-    };
-    fetchSavedMovies();
-  }, []);
+    );
+    return response.data.map((movie: any) => ({
+      id: movie.movieId,
+      title: movie.title,
+      poster_path: movie.posterUrl,
+      vote_average: 0, // Placeholder, as TMDb data not fetched
+      release_date: "",
+    }));
+  };
+
+  const {
+    data: savedMovies,
+    loading,
+    error,
+  } = useFetch(fetchSavedMovies, true);
 
   return (
-    <View className="flex-1 bg-primary">
-      <Image
-        source={images.bg}
-        className="flex-1 absolute w-full z-0"
-        resizeMode="cover"
-      />
-      <FlatList
-        className="px-5"
-        data={savedMovies}
-        keyExtractor={(item) => item.$id} // Use $id for unique key
-        renderItem={({ item }) => (
-          <MovieDisplayCard
-            id={item.movie_id}
-            title={item.title}
-            poster_path={item.poster_url.replace(
-              "https://image.tmdb.org/t/p/w500",
-              ""
-            )} // Normalize URL
-            vote_average={item.vote_average}
-            release_date={item.release_date}
-            adult={false} // Default value, adjust if needed
-            backdrop_path={null} // Default, or fetch from API if needed
-            genre_ids={item.genre_ids || []} // Use saved genre_ids
-            original_language="" // Default, or fetch from API
-            original_title={item.title} // Use title as fallback
-            overview="" // Default, or fetch from API
-            popularity={0} // Default, or fetch from API
-            video={false} // Default
-            vote_count={0} // Default
+    <View className="flex-1 bg-primary px-5 pt-20">
+      <Animated.View entering={FadeInDown.duration(500)} className="mb-5">
+        <Text className="text-lg text-white font-bold">Saved Movies</Text>
+      </Animated.View>
+
+      {loading ? (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          className="mt-10 self-center"
+        >
+          <ActivityIndicator size="large" color="#0000ff" />
+        </Animated.View>
+      ) : error ? (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          className="mt-10"
+        >
+          <Text className="text-red-500 text-center">
+            Error: {error.message}
+          </Text>
+        </Animated.View>
+      ) : (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          className="flex-1 mt-5"
+        >
+          <FlatList
+            data={savedMovies}
+            renderItem={({ item, index }) => (
+              <Animated.View
+                entering={FadeInDown.duration(500).delay(400 + index * 100)}
+                className="flex-1"
+              >
+                <MovieCard {...item} />
+              </Animated.View>
+            )}
+            keyExtractor={(item, index) =>
+              item.id.toString() + index.toString()
+            }
+            numColumns={3}
+            columnWrapperStyle={{
+              justifyContent: "space-between",
+              gap: 10,
+              marginBottom: 10,
+            }}
+            contentContainerStyle={{ paddingHorizontal: 5 }}
+            className="mt-2 pb-32"
+            scrollEnabled={true}
+            initialNumToRender={6}
           />
-        )}
-        numColumns={3}
-        columnWrapperStyle={{
-          justifyContent: "flex-start",
-          gap: 16,
-          marginVertical: 16,
-        }}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        ListHeaderComponent={
-          <>
-            <View className="w-full flex-row justify-center mt-20 items-center">
-              <Image source={icons.logo} className="w-12 h-10" />
-            </View>
-            <View className="my-5">
-              <Text className="text-xl text-white font-bold px-5">
-                Saved Movies
-              </Text>
-            </View>
-            {loading && (
-              <ActivityIndicator
-                size="large"
-                color="#0000ff"
-                className="my-3"
-              />
-            )}
-            {error && (
-              <Text className="text-red-500 px-5 my-3">Error: {error}</Text>
-            )}
-          </>
-        }
-        ListEmptyComponent={
-          !loading && !error ? (
-            <View className="mt-10 px-5">
-              <Text className="text-center text-gray-500">
-                No saved movies yet
-              </Text>
-            </View>
-          ) : null
-        }
-      />
+        </Animated.View>
+      )}
     </View>
   );
 };
