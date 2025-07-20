@@ -10,18 +10,21 @@ export default function RootLayout() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Check if the current route is public
+      const currentRoute = segments[segments.length - 1];
+      const isPublicRoute =
+        currentRoute === "login" || currentRoute === "signup";
+
+      if (isPublicRoute) return;
+
       try {
         await account.get(); // Check if user is logged in
       } catch (error: any) {
         console.error("Authentication check failed:", error);
-        // If not authenticated and not on a public route, redirect to login
-        const isPublicRoute =
-          segments.includes("login") || segments.includes("signup");
-        if (!isPublicRoute) {
-          router.replace("/(auth)/login");
-        }
+        router.replace("/(auth)/login");
       }
     };
+
     checkAuth();
   }, [segments, router]);
 

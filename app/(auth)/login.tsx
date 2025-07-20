@@ -15,7 +15,7 @@ const Login = () => {
       setLoading(true);
       await account.createEmailPasswordSession(email, password);
       Alert.alert("Success", "Logged in successfully!");
-      router.replace("/(tabs)/save"); // Redirect to saved movies screen
+      router.replace("/(tabs)");
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to log in");
     } finally {
@@ -69,7 +69,10 @@ const Login = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity className="mt-4" onPress={() => router.push("/signup")}>
+      <TouchableOpacity
+        className="mt-4"
+        onPress={() => router.push("/(auth)/signup")}
+      >
         <Text className="text-light-200 text-center">
           Don&apos;t have an account?{" "}
           <Text className="text-accent">Sign Up</Text>

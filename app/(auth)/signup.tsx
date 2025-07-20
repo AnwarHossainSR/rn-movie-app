@@ -14,12 +14,10 @@ const Signup = () => {
   const handleSignup = async () => {
     try {
       setLoading(true);
-      // Create user account
       await account.create(ID.unique(), email, password, name);
-      // Automatically log in after signup
       await account.createEmailPasswordSession(email, password);
       Alert.alert("Success", "Account created successfully!");
-      router.replace("/(tabs)/save"); // Redirect to saved movies screen
+      router.replace("/(tabs)");
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to sign up");
     } finally {
@@ -84,7 +82,10 @@ const Signup = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity className="mt-4" onPress={() => router.push("/login")}>
+      <TouchableOpacity
+        className="mt-4"
+        onPress={() => router.push("/(auth)/login")}
+      >
         <Text className="text-light-200 text-center">
           Already have an account? <Text className="text-accent">Log In</Text>
         </Text>

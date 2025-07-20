@@ -1,9 +1,8 @@
-// appwrite.ts
 import { Account, Client, Databases, ID, Query } from "react-native-appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const SAVED_MOVIES_COLLECTION_ID =
-  process.env.EXPO_PUBLIC_APPWRITE_SAVED_MOVIES_COLLECTION_ID!; // Add this to your .env
+  process.env.EXPO_PUBLIC_APPWRITE_SAVED_MOVIES_COLLECTION_ID!;
 const COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_ID!;
 
 const client = new Client()
@@ -61,7 +60,6 @@ export const getTrendingMovies = async (): Promise<
   }
 };
 
-// New functions for saved movies
 export const saveMovie = async (movie: Movie) => {
   try {
     const user = await account.get();
@@ -86,9 +84,9 @@ export const saveMovie = async (movie: Movie) => {
           movie_id: movie.id.toString(),
           title: movie.title,
           poster_url: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
-          vote_average: movie.vote_average,
-          release_date: movie.release_date,
-          genre_ids: movie.genre_ids,
+          vote_average: movie.vote_average || 0,
+          release_date: movie.release_date || "",
+          genre_ids: movie.genre_ids || [],
           saved_at: new Date().toISOString(),
         }
       );
