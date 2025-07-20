@@ -9,17 +9,47 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const validateInputs = () => {
+    if (!name || name.length < 2) {
+      setError("Name must be at least 2 characters");
+      return false;
+    }
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email");
+      return false;
+    }
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return false;
+    }
+    return true;
+  };
 
   const handleSignup = async () => {
+    if (!validateInputs()) return;
+
     try {
       setLoading(true);
+      setError(null);
       await account.create(ID.unique(), email, password, name);
       await account.createEmailPasswordSession(email, password);
       Alert.alert("Success", "Account created successfully!");
       router.replace("/(tabs)");
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to sign up");
+      const errorMessage =
+        error.code === 409
+          ? "Email already exists"
+          : error.message || "Failed to sign up";
+      setError(errorMessage);
+      Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -29,12 +59,17 @@ const Signup = () => {
     <View className="flex-1 bg-primary justify-center px-5">
       <Text className="text-white font-bold text-2xl mb-5">Sign Up</Text>
 
+      {error && <Text className="text-red-500 mb-4 text-center">{error}</Text>}
+
       <View className="mb-4">
         <Text className="text-light-200 mb-2">Name</Text>
         <TextInput
           className="bg-dark-100 text-white p-3 rounded-lg"
           value={name}
-          onChangeText={setName}
+          onChangeText={(text) => {
+            setName(text);
+            setError(null);
+          }}
           placeholder="Enter your name"
           placeholderTextColor="#999"
         />
@@ -45,7 +80,10 @@ const Signup = () => {
         <TextInput
           className="bg-dark-100 text-white p-3 rounded-lg"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            setError(null);
+          }}
           placeholder="Enter your email"
           placeholderTextColor="#999"
           keyboardType="email-address"
@@ -58,8 +96,26 @@ const Signup = () => {
         <TextInput
           className="bg-dark-100 text-white p-3 rounded-lg"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            setError(null);
+          }}
           placeholder="Enter your password"
+          placeholderTextColor="#999"
+          secureTextEntry
+        />
+      </View>
+
+      <View className="mb-4">
+        <Text className="text-light-200 mb-2">Confirm Password</Text>
+        <TextInput
+          className="bg-dark-100 text-white p-3 rounded-lg"
+          value={confirmPassword}
+          onChangeText={(text) => {
+            setConfirmPassword(text);
+            setError(null);
+          }}
+          placeholder="Confirm your password"
           placeholderTextColor="#999"
           secureTextEntry
         />

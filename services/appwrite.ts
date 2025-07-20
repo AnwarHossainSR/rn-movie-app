@@ -68,10 +68,7 @@ export const saveMovie = async (movie: Movie) => {
     const existingMovies = await database.listDocuments(
       DATABASE_ID,
       SAVED_MOVIES_COLLECTION_ID,
-      [
-        Query.equal("user_id", userId),
-        Query.equal("movie_id", movie.id.toString()),
-      ]
+      [Query.equal("user_id", userId), Query.equal("movie_id", movie.id)]
     );
 
     if (existingMovies.documents.length === 0) {
@@ -81,10 +78,10 @@ export const saveMovie = async (movie: Movie) => {
         ID.unique(),
         {
           user_id: userId,
-          movie_id: movie.id.toString(),
+          movie_id: movie.id,
           title: movie.title,
           poster_url: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
-          vote_average: movie.vote_average || 0,
+          vote_average: parseInt(movie.vote_average.toFixed(1)) || 0,
           release_date: movie.release_date || "",
           genre_ids: movie.genre_ids || [],
           saved_at: new Date().toISOString(),
@@ -105,7 +102,10 @@ export const removeSavedMovie = async (movieId: string) => {
     const result = await database.listDocuments(
       DATABASE_ID,
       SAVED_MOVIES_COLLECTION_ID,
-      [Query.equal("user_id", userId), Query.equal("movie_id", movieId)]
+      [
+        Query.equal("user_id", userId),
+        Query.equal("movie_id", parseInt(movieId)),
+      ]
     );
 
     if (result.documents.length > 0) {

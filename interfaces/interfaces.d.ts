@@ -85,6 +85,6 @@ interface SavedMovie {
   poster_url: string;
   vote_average: number;
   release_date: string;
-  genre_ids?: number[];
+  genre_ids: number[];
   saved_at: string;
 }

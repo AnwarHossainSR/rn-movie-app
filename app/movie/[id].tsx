@@ -1,4 +1,11 @@
-// movie/[id].tsx
+import { icons } from "@/constants/icons";
+import { fetchMovieDetails } from "@/services/api";
+import {
+  getSavedMovies,
+  removeSavedMovie,
+  saveMovie,
+} from "@/services/appwrite";
+import useFetch from "@/services/usefetch";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -10,15 +17,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { icons } from "@/constants/icons";
-import { fetchMovieDetails } from "@/services/api";
-import {
-  getSavedMovies,
-  removeSavedMovie,
-  saveMovie,
-} from "@/services/appwrite";
-import useFetch from "@/services/usefetch";
 
 interface MovieInfoProps {
   label: string;
@@ -38,39 +36,46 @@ const Details = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { data: movie, loading } = useFetch(() =>
     fetchMovieDetails(id as string)
   );
 
-  // Check if the movie is saved
   useEffect(() => {
     const checkIfSaved = async () => {
       try {
         const savedMovies = await getSavedMovies();
         const isMovieSaved = savedMovies.some(
-          (savedMovie) => savedMovie.movie_id === id
+          (savedMovie) => savedMovie.movie_id.toString() === id
         );
         setIsSaved(isMovieSaved);
       } catch (error) {
         console.error("Error checking saved movie:", error);
+        setError("Failed to check saved status");
       }
     };
     checkIfSaved();
   }, [id]);
 
-  // Handle save/unsave movie
   const handleSaveToggle = async () => {
     try {
+      setIsSaving(true);
+      setError(null);
+      console.log("Toggling save for movie:", id, "isSaved:", isSaved);
       if (isSaved) {
         await removeSavedMovie(id as string);
         setIsSaved(false);
       } else if (movie) {
+        // console.log("Saving movie:", movie);
         await saveMovie(movie);
         setIsSaved(true);
       }
-    } catch (error) {
-      console.error("Error toggling save:", error);
+    } catch (error: any) {
+      setError(error.message || "Failed to toggle save");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -96,13 +101,18 @@ const Details = () => {
           <TouchableOpacity
             className="absolute bottom-5 right-5 rounded-full size-14 bg-white flex items-center justify-center"
             onPress={handleSaveToggle}
+            disabled={isSaving}
           >
-            <Image
-              source={isSaved ? icons.bookmarkFilled : icons.save}
-              className="w-6 h-6"
-              tintColor={isSaved ? "#FFD700" : "#000"}
-              resizeMode="contain"
-            />
+            {isSaving ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <Image
+                source={isSaved ? icons.bookmarkFilled : icons.save}
+                className="w-6 h-6"
+                tintColor={isSaved ? "#FFD700" : "#000"}
+                resizeMode="contain"
+              />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -125,12 +135,20 @@ const Details = () => {
             </Text>
           </View>
 
-          <MovieInfo label="Overview" value={movie?.overview} />
-          <MovieInfo
-            label="Genres"
-            value={movie?.genres?.map((g) => g.name).join(" • ") || "N/A"}
-          />
+          {error && <Text className="text-red-500 mt-3">{error}</Text>}
 
+          <View className="flex-row flex-wrap mt-5">
+            {movie?.genres?.map((genre) => (
+              <Text
+                key={genre.id}
+                className="bg-dark-100 text-white px-3 py-1 rounded-full mr-2 mb-2"
+              >
+                {genre.name}
+              </Text>
+            ))}
+          </View>
+
+          <MovieInfo label="Overview" value={movie?.overview} />
           <View className="flex flex-row justify-between w-1/2">
             <MovieInfo
               label="Budget"
@@ -143,7 +161,6 @@ const Details = () => {
               )} million`}
             />
           </View>
-
           <MovieInfo
             label="Production Companies"
             value={

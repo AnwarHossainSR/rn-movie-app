@@ -1,18 +1,15 @@
-// (tabs)/save.tsx
-import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Text, View } from "react-native";
-
 import MovieDisplayCard from "@/components/MovieCard";
 import { icons } from "@/constants/icons";
 import { images } from "@/constants/images";
 import { getSavedMovies } from "@/services/appwrite";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Image, Text, View } from "react-native";
 
 const Save = () => {
   const [savedMovies, setSavedMovies] = useState<SavedMovie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch saved movies
   useEffect(() => {
     const fetchSavedMovies = async () => {
       try {
@@ -37,27 +34,29 @@ const Save = () => {
         className="flex-1 absolute w-full z-0"
         resizeMode="cover"
       />
-
       <FlatList
         className="px-5"
         data={savedMovies}
-        keyExtractor={(item) => item.movie_id}
+        keyExtractor={(item) => item.$id} // Use $id for unique key
         renderItem={({ item }) => (
           <MovieDisplayCard
-            id={parseInt(item.movie_id)}
+            id={item.movie_id}
             title={item.title}
-            poster_path={item.poster_url}
+            poster_path={item.poster_url.replace(
+              "https://image.tmdb.org/t/p/w500",
+              ""
+            )} // Normalize URL
             vote_average={item.vote_average}
             release_date={item.release_date}
-            adult={false}
-            backdrop_path={""}
-            genre_ids={[]}
-            original_language={""}
-            original_title={""}
-            overview={""}
-            popularity={0}
-            video={false}
-            vote_count={0}
+            adult={false} // Default value, adjust if needed
+            backdrop_path={null} // Default, or fetch from API if needed
+            genre_ids={item.genre_ids || []} // Use saved genre_ids
+            original_language="" // Default, or fetch from API
+            original_title={item.title} // Use title as fallback
+            overview="" // Default, or fetch from API
+            popularity={0} // Default, or fetch from API
+            video={false} // Default
+            vote_count={0} // Default
           />
         )}
         numColumns={3}
@@ -72,13 +71,11 @@ const Save = () => {
             <View className="w-full flex-row justify-center mt-20 items-center">
               <Image source={icons.logo} className="w-12 h-10" />
             </View>
-
             <View className="my-5">
               <Text className="text-xl text-white font-bold px-5">
                 Saved Movies
               </Text>
             </View>
-
             {loading && (
               <ActivityIndicator
                 size="large"
@@ -86,7 +83,6 @@ const Save = () => {
                 className="my-3"
               />
             )}
-
             {error && (
               <Text className="text-red-500 px-5 my-3">Error: {error}</Text>
             )}
